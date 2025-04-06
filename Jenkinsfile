@@ -5,6 +5,8 @@ pipeline {
     environment {
         REPO_URL = 'https://github.com/kirannvkumar/UseCaseOne.git'
         FILE_MATCH = 'Akshay.txt'
+        EC2_HOST = 'https://54.208.53.48/'
+        SSH_CREDENTIALS_ID = 'MYSSH_CREDS'
     }
 
     stages {
@@ -15,18 +17,30 @@ pipeline {
             }
         }
 
-    stage('Read github repo and check for File') {
+        stage('Read github repo and check for File') {
             steps {
                 script {
                     def foundFile = sh(script: "find . -type f -name '*${FILE_MATCH}*'", returnStdout: true).trim()
 
                     if (foundFile) {
                         echo "File(s) found: ${foundFile}"
-                    } else {
+                        // Install nginx server in ec2 instance
+                        sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+                            sh """
+                            ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
+                            sudo apt-get update
+                            sudo apt-get install -y nginx
+                            sudo systemctl start nginx
+                            sudo systemctl enable nginx
+                            EOF
+                        """
+                        }
+                    }
+                    else {
                         error "No file with '${FILE_MATCH}' in its name was found."
                     }
                 }
             }
-    }
+        }
     }
 }
