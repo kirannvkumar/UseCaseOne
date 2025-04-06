@@ -1,43 +1,36 @@
+
 pipeline {
-  agent any
-  stages {
-    stage('Checkout Code') {
-      steps {        
-        git branch: 'main', url: 'https://github.com/kirannvkumar/UseCaseOne.git'
-        sh 'echo "Code checked out successfully!"'
-      }
+    agent any
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/kirannvkumar/UseCaseOne.git'
+                sh 'echo "Code checked out successfully!"'
+            }
+        }
+
+        parameters {
+            base64File name: 'my_file', description: 'My Uploaded File'
+        }
+
+        stage('Upload and Process') {
+            steps {
+                withFileParameter(name: 'my_file', allowNoFile: false) {
+                    // Access the uploaded file using the parameter name
+                    sh "ls -l ${my_file}" // Example: List the contents of the file
+                    // Add your logic to process the uploaded file here
+                }
+            }
+        }
+
+        // stage('Read File') {
+        //         steps {
+        //             // Read the file
+        //             script {
+        //                 def fileContent = readFile file: 'path/to/your/file.txt' // Replace with the file path
+        //                 echo "File content: ${fileContent}"
+        //             }
+        //         }
+        // }
     }
-  }
 }
-
-
-// pipeline {
-//   agent any
-//   stages {
-//     stage('Checkout Code') {
-//       steps {
-//         git 'https://github.com/kirannvkumar/UseCaseOne.git'
-//       }
-//     }
-//     stage('Build') {
-//       steps {
-//         sh 'mvn clean install' // Example Maven build command
-//       }
-//     }
-//     stage('Test') {
-//       steps {
-//         sh 'mvn test' // Example Maven test command
-//       }
-//     }
-//     stage('Deploy') {
-//       when {
-//         branch 'main' // Deploy only on the main branch
-//       }
-//       steps {
-//         sh 'echo "Deploying to production..."' // Replace with your deployment command
-//       }
-//     }
-//   }
-// }
-
-
