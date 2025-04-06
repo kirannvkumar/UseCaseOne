@@ -5,7 +5,7 @@ pipeline {
     environment {
         REPO_URL = 'https://github.com/kirannvkumar/UseCaseOne.git'
         FILE_MATCH = 'Akshay.txt'
-        EC2_HOST = 'https://54.208.53.48/'
+        EC2_HOST = '54.208.53.48'
         SSH_CREDENTIALS_ID = 'MYSSH_CREDS'
     }
 
