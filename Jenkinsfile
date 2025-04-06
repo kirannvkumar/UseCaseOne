@@ -1,6 +1,11 @@
 
 pipeline {
     agent any
+
+    parameters {
+            base64File name: 'my_file', description: 'My Uploaded File'
+    }
+
     stages {
         stage('Checkout Code') {
             steps {
@@ -9,28 +14,31 @@ pipeline {
             }
         }
 
-        parameters {
-            base64File name: 'my_file', description: 'My Uploaded File'
-        }
+    // Checks whether the file name has the text "Akshay.txt" or not
+    stage('Upload and Check') {
+                  steps {
+                      withFileParameter(name: 'MY_FILE', allowNoFile: false) {
+                          sh """
+                              # Check if the file exists
+                              if [ -f "${MY_FILE}" ]; then
+                                  # Get the filename
+                                  filename="${MY_FILE##*/}"
 
-        stage('Upload and Process') {
-            steps {
-                withFileParameter(name: 'my_file', allowNoFile: false) {
-                    // Access the uploaded file using the parameter name
-                    sh "ls -l ${my_file}" // Example: List the contents of the file
-                    // Add your logic to process the uploaded file here
-                }
-            }
-        }
-
-        // stage('Read File') {
-        //         steps {
-        //             // Read the file
-        //             script {
-        //                 def fileContent = readFile file: 'path/to/your/file.txt' // Replace with the file path
-        //                 echo "File content: ${fileContent}"
-        //             }
-        //         }
-        // }
+                                  # Check if the filename is what you expect
+                                  if [ "${filename}" == "Akshay.txt" ]; then
+                                      echo "File name is correct: ${filename}"
+                                  else
+                                      echo "File name is incorrect: ${filename}"
+                                      echo "Expected Filename is: Akshay.txt"
+                                      fail "File name verification failed"
+                                  fi
+                              else
+                                  echo "File not found"
+                                  fail "File upload failed"
+                              fi
+                          """
+                      }
+                  }
+    }
     }
 }
