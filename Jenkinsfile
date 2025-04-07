@@ -42,7 +42,7 @@ pipeline {
                             //     exit 1
                             // fi
 
-                            def response = httpRequest 'http://${EC2_HOST}'
+                            def response = httpRequest "http://${EC2_HOST}"
                             if (response.status == 200) {
                                echo "Nginx is up and running."
                             } else {
