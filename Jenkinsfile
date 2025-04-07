@@ -28,10 +28,11 @@ pipeline {
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                             sh """
                             ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
-                            sudo apt-get update
-                            sudo apt-get install -y nginx
+                            sudo yum update -y
+                            sudo yum install nginx -y
                             sudo systemctl start nginx
                             sudo systemctl enable nginx
+                            sudo systemctl status nginx
                             EOF
                         """
                         }
