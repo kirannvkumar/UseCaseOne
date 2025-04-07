@@ -33,8 +33,9 @@ pipeline {
                             sudo yum install -y nginx
                             sudo systemctl start nginx
                             sudo systemctl enable nginx
-                            RESPONSE=$(curl -o /dev/null -s -w "%{http_code}" http://localhost)
-                            if [ "$RESPONSE" -eq 200 ]; then
+
+                            RESPONSE=$(curl -o /dev/null -s -w "%{http_code}" http://localhost | tr -d '[:space:]')
+                            if [ "$RESPONSE" = "200" ]; then
                                 echo "Nginx is up and running."
                             else
                                 echo "Nginx installation failed or server not responding with 200."
