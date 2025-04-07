@@ -38,7 +38,7 @@ EOF
                         }
                     }
                     else {
-                        error "No file with '${FILE_MATCH}' in its name was found."
+                        echo "No file with '${FILE_MATCH}' in its name was found."
                     }
                 }
             }
