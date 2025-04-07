@@ -28,11 +28,10 @@ pipeline {
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                             sh '''
                         ssh -o StrictHostKeyChecking=no ec2-user@$EC2_HOST << EOF
-                            sudo yum update -y
-                            sudo amazon-linux-extras enable nginx1
-                            sudo yum install -y nginx
+                            sudo yum install nginx -y
                             sudo systemctl start nginx
                             sudo systemctl enable nginx
+                            sudo systemctl status nginx
 
                             RESPONSE=$(curl -o /dev/null -s -w "%{http_code}" http://localhost | tr -d '[:space:]')
                             if [ "$RESPONSE" = "200" ]; then
