@@ -26,30 +26,26 @@ pipeline {
                         echo "File(s) found: ${foundFile}"
                         // Install nginx server in ec2 instance
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
-                            sh """
-                            ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
+                            sh '''
+                        ssh -o StrictHostKeyChecking=no ec2-user@$EC2_HOST << EOF
                             sudo yum update -y
-                            sudo yum install nginx -y
+                            sudo amazon-linux-extras enable nginx1
+                            sudo yum install -y nginx
                             sudo systemctl start nginx
                             sudo systemctl enable nginx
-                            sudo systemctl status nginx
-                            '''
-                            
-                            // Validate Nginx installation
-                            def response = sshCommand remote: remote, command: '''
-                            curl -o /dev/null -s -w "%{http_code}" http://localhost
-                            '''
-                              if (response == '200') {
-                              echo 'Nginx home page is accessible.'
-                              } else {
-                              error 'Failed to access Nginx home page.'
-                              }
+                            RESPONSE=$(curl -o /dev/null -s -w "%{http_code}" http://localhost)
+                            if [ "$RESPONSE" -eq 200 ]; then
+                                echo "Nginx is up and running."
+                            else
+                                echo "Nginx installation failed or server not responding with 200."
+                                exit 1
+                            fi
 EOF
-                        """
+                    '''
                         }
                     }
                     else {
-                        echo "No file with '${FILE_MATCH}' was found."
+                        echo "No file with '${FILE_MATCH}' in its name was found."
                     }
                 }
             }
