@@ -33,14 +33,21 @@ pipeline {
                             sudo systemctl enable nginx
                             sudo systemctl status nginx 
 
-                            RESPONSE=$(curl -o /dev/null -s -w "%{http_code}" http://localhost | tr -d '[:space:]')
-                            sleep 10s
-                            if [ "$RESPONSE" = "200" ]; then
-                                echo "Nginx is up and running."
-                            else
-                                echo "Nginx installation failed or server not responding with 200."
-                                exit 1
-                            fi
+                            // RESPONSE=$(curl -o /dev/null -s -w "%{http_code}" http://localhost | tr -d '[:space:]')
+                            // sleep 10s
+                            // if [ "$RESPONSE" = "200" ]; then
+                            //     echo "Nginx is up and running."
+                            // else
+                            //     echo "Nginx installation failed or server not responding with 200."
+                            //     exit 1
+                            // fi
+
+                            def response = httpRequest 'http://${EC2_HOST}'
+                            if (response.status == 200) {
+                               echo "Nginx is up and running."
+                            } else {
+                              echo "Nginx is not responding with 200. Status: ${response.status}"
+                          }
 EOF
                     '''
                         }
