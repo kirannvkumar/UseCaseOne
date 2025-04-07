@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -34,13 +33,11 @@ pipeline {
                             sudo systemctl enable nginx
                             sudo systemctl status nginx
 EOF
-                        """
+                            """
                         }
-                    }
-                    else {
+                    } else {
                         echo "No file with '${FILE_MATCH}' found and so installing httpd server"
-                        
-                        //Install httpd server in ec2 instance
+                        // Install httpd server in ec2 instance
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                             sh """
                             ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
@@ -48,14 +45,13 @@ EOF
                             sudo yum install -y httpd
                             sudo systemctl start httpd
                             sudo systemctl enable httpd
-                            sudo echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+                            echo "<h1>Hello World from \$(hostname -f)</h1>" | sudo tee /var/www/html/index.html
 EOF
-                        """
-
+                            """
+                        }
                     }
                 }
             }
         }
     }
-}
 }
