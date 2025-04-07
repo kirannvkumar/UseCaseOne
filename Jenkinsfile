@@ -34,6 +34,12 @@ pipeline {
                             sudo systemctl enable nginx
                             sudo systemctl status nginx
 EOF
+                            def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://${EC2_HOST}", returnStdout: true).trim()
+                              if (response == '200') {
+                              echo 'Nginx home page is accessible.'
+                              } else {
+                              error 'Failed to access Nginx home page.'
+                             }                            
                         """
                         }
                     }
