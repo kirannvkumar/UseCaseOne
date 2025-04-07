@@ -39,11 +39,11 @@ EOF
                     }
                     else {
                         echo "No file with '${FILE_MATCH}' found and so installing httpd server"
-
-                        sh """
+                        
+                        //Install httpd server in ec2 instance
+                        sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+                            sh """
                             ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
-                            #!/bin/bash
-                            # install httpd (Linux 2 version)
                             sudo yum update -y
                             sudo yum install -y httpd
                             sudo systemctl start httpd
