@@ -34,6 +34,7 @@ pipeline {
                             sudo systemctl status nginx 
 
                             RESPONSE=$(curl -o /dev/null -s -w "%{http_code}" http://localhost | tr -d '[:space:]')
+                            sleep 10s
                             if [ "$RESPONSE" = "200" ]; then
                                 echo "Nginx is up and running."
                             else
