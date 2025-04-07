@@ -38,7 +38,20 @@ EOF
                         }
                     }
                     else {
-                        error "No file with '${FILE_MATCH}' in its name was found."
+                        echo "No file with '${FILE_MATCH}' found and so installing httpd server"
+
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
+                            #!/bin/bash
+                            # install httpd (Linux 2 version)
+                            sudo yum update -y
+                            sudo yum install -y httpd
+                            sudo systemctl start httpd
+                            sudo systemctl enable httpd
+                            sudo echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+EOF
+                        """
+
                     }
                 }
             }
