@@ -26,37 +26,19 @@ pipeline {
                         echo "File(s) found: ${foundFile}"
                         // Install nginx server in ec2 instance
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
-                            sh '''
-                        ssh -o StrictHostKeyChecking=no ec2-user@$EC2_HOST << EOF
+                            sh """
+                            ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
+                            sudo yum update -y
                             sudo yum install nginx -y
                             sudo systemctl start nginx
                             sudo systemctl enable nginx
-                            sudo systemctl status nginx 
-                       
-                            // // nginx validation logic by doing curl
-                            // sleep 10s
-                            // RESPONSE=$(curl -o /dev/null -s -w "%{http_code}" http://localhost | tr -d '[:space:]')                            
-                            // if [ "$RESPONSE" = "200" ]; then
-                            //     echo "Nginx is up and running."
-                            // else
-                            //     echo "Nginx installation failed or server not responding with 200."
-                            //     exit 1
-                            // fi
-
-                            // def response = httpRequest 'http://${EC2_HOST}'
-                            // if (response.status == 200) {
-                            //   echo "Request was successful."
-                            //     } else {
-                            // echo "Request failed with status: ${response.status}"
-                            //         }
-
-                    }
+                            sudo systemctl status nginx
 EOF
-                    '''
+                        """
                         }
                     }
                     else {
-                        echo "No file with '${FILE_MATCH}' in its name was found."
+                        error "No file with '${FILE_MATCH}' in its name was found."
                     }
                 }
             }
