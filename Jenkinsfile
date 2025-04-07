@@ -35,7 +35,7 @@ pipeline {
                                     sudo systemctl start nginx
                                     sudo systemctl enable nginx
                                     sudo systemctl status nginx
-                                EOF
+EOF
                             """
                         }
                     } else {
@@ -49,7 +49,7 @@ pipeline {
                                     sudo systemctl start httpd
                                     sudo systemctl enable httpd
                                     echo "<h1>Hello World from \$(hostname -f)</h1>" | sudo tee /var/www/html/index.html
-                                EOF
+EOF
                             """
                         }
                     }
