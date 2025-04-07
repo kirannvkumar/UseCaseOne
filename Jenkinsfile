@@ -34,13 +34,17 @@ pipeline {
                             sudo systemctl enable nginx
                             sudo systemctl status nginx
 
-                            def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://${EC2_HOST}", returnStdout: true).trim()
+                            //def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://${EC2_HOST}", returnStdout: true).trim()
+                            // Validate Nginx installation
+                            def response = sshCommand remote: remote, command: '''
+                            curl -o /dev/null -s -w "%{http_code}" http://${EC2_HOST}
+                            '''
                               if (response == '200') {
                               echo 'Nginx home page is accessible.'
                               } else {
                               error 'Failed to access Nginx home page.'
                               }
-EOF                              
+EOF
                         """
                         }
                     }
