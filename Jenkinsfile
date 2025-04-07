@@ -32,6 +32,7 @@ pipeline {
                             sudo systemctl start nginx
                             sudo systemctl enable nginx
                             sudo systemctl status nginx
+                            sleep 10s
 
                             RESPONSE=$(curl -o /dev/null -s -w "%{http_code}" http://localhost | tr -d '[:space:]')
                             if [ "$RESPONSE" = "200" ]; then
