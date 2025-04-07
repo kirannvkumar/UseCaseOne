@@ -26,30 +26,30 @@ pipeline {
 
                     if (foundFile) {
                         echo "File(s) found: ${foundFile}"
-                        // Install nginx server in ec2 instance
+                        // Install nginx server in EC2 instance
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                             sh """
-                            ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
-                            sudo yum update -y
-                            sudo yum install nginx -y
-                            sudo systemctl start nginx
-                            sudo systemctl enable nginx
-                            sudo systemctl status nginx
-EOF
+                                ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
+                                    sudo yum update -y
+                                    sudo yum install nginx -y
+                                    sudo systemctl start nginx
+                                    sudo systemctl enable nginx
+                                    sudo systemctl status nginx
+                                EOF
                             """
                         }
                     } else {
-                        echo "No file with '${FILE_MATCH}' found and so installing httpd server"
-                        // Install httpd server in ec2 instance
+                        echo "No file with '${FILE_MATCH}' found, installing httpd server..."
+                        // Install httpd server in EC2 instance
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                             sh """
-                            ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
-                            sudo yum update -y
-                            sudo yum install -y httpd
-                            sudo systemctl start httpd
-                            sudo systemctl enable httpd
-                            echo "<h1>Hello World from \$(hostname -f)</h1>" | sudo tee /var/www/html/index.html
-EOF
+                                ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
+                                    sudo yum update -y
+                                    sudo yum install -y httpd
+                                    sudo systemctl start httpd
+                                    sudo systemctl enable httpd
+                                    echo "<h1>Hello World from \$(hostname -f)</h1>" | sudo tee /var/www/html/index.html
+                                EOF
                             """
                         }
                     }
@@ -58,21 +58,25 @@ EOF
         }
 
         stage('Check Route 53 DNS') {
-            echo "Checking Route 53 hosted zones and DNS records..."
-            try {
-                sh """
-                    export AWS_REGION = ${AWS_REGION}
-                    aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-                    aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-                    aws configure set default.region \${AWS_REGION}
+            steps {
+                echo "Checking Route 53 hosted zones and DNS records..."
+                script {
+                    try {
+                        sh """
+                            export AWS_REGION=${AWS_REGION}
+                            aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+                            aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+                            aws configure set default.region "$AWS_REGION"
 
-                    ZONE_ID=\$(aws route53 list-hosted-zones --query "HostedZones[0].Id" --output text | cut -d'/' -f3)
-                    echo "Using Hosted Zone ID: \$ZONE_ID"
+                            ZONE_ID=\$(aws route53 list-hosted-zones --query "HostedZones[0].Id" --output text | cut -d'/' -f3)
+                            echo "Using Hosted Zone ID: \$ZONE_ID"
 
-                    aws route53 list-resource-record-sets --hosted-zone-id \$ZONE_ID
-                """
-            } catch (err) {
-                error "Failed to fetch DNS records: ${err}"
+                            aws route53 list-resource-record-sets --hosted-zone-id \$ZONE_ID
+                        """
+                    } catch (err) {
+                        error "Failed to fetch DNS records: ${err}"
+                    }
+                }
             }
         }
     }
