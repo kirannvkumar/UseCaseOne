@@ -66,7 +66,7 @@ EOF
                     aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
                     aws configure set default.region \${AWS_REGION}
 
-                    ZONE_ID=$(aws route53 list-hosted-zones --query "HostedZones[0].Id" --output text | cut -d'/' -f3)
+                    ZONE_ID=\$(aws route53 list-hosted-zones --query "HostedZones[0].Id" --output text | cut -d'/' -f3)
                     echo "Using Hosted Zone ID: \$ZONE_ID"
 
                     aws route53 list-resource-record-sets --hosted-zone-id \$ZONE_ID
