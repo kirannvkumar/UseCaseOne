@@ -6,6 +6,9 @@ pipeline {
         FILE_MATCH = 'Akshay.txt'
         EC2_HOST = '54.208.53.48'
         SSH_CREDENTIALS_ID = 'MYSSH_CREDS'
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
+        AWS_REGION = 'us-east-1'
     }
 
     stages {
@@ -51,6 +54,25 @@ EOF
                         }
                     }
                 }
+            }
+        }
+
+        stage('Check Route 53 DNS') {
+            echo "Checking Route 53 hosted zones and DNS records..."
+            try {
+                sh """
+                    export AWS_REGION=${AWS_REGION}
+                    aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+                    aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+                    aws configure set default.region ${AWS_REGION}
+
+                    ZONE_ID=$(aws route53 list-hosted-zones --query "HostedZones[0].Id" --output text | cut -d'/' -f3)
+                    echo "Using Hosted Zone ID: \$ZONE_ID"
+
+                    aws route53 list-resource-record-sets --hosted-zone-id \$ZONE_ID
+                """
+            } catch (err) {
+                error "Failed to fetch DNS records: ${err}"
             }
         }
     }
