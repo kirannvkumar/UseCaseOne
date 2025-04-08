@@ -9,8 +9,8 @@ pipeline {
         AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
         AWS_REGION = 'us-east-1'
-        ROUTE53_DOMAIN = 'nvtesting.shop'
-        HOSTED_ZONE_ID = 'Z0262530JEOOHHQSAMX3'    // Replace with your actual Hosted Zone ID
+        ROUTE53_DOMAIN = 'nginx.example.com' // Replace with your Route53 domain
+        HOSTED_ZONE_ID = 'Z3P5QSUBK4POTI'    // Replace with your hosted zone ID
     }
 
     stages {
@@ -90,10 +90,18 @@ EOF
 
         stage('Access Nginx via Route53 Domain') {
             steps {
-                // Wait briefly to ensure DNS propagation
-                sh 'sleep 30'
-
-                sh "curl -I http://${ROUTE53_DOMAIN}"
+                script {
+                    try {
+                        echo "Waiting for DNS propagation..."
+                        sleep time: 30, unit: 'SECONDS'
+                        echo "Attempting to curl http://${ROUTE53_DOMAIN}"
+                        
+                        sh "curl --fail --connect-timeout 10 --retry 3 --retry-delay 5 http://${ROUTE53_DOMAIN}"
+                        echo "✅ Success: Able to access Nginx via Route53!"
+                    } catch (Exception e) {
+                        error "❌ Failed to access Nginx at ${ROUTE53_DOMAIN}. Pipeline failed."
+                    }
+                }
             }
         }
     }
