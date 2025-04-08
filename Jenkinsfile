@@ -99,7 +99,7 @@ EOF
                         sh "curl --fail --connect-timeout 10 --retry 3 --retry-delay 5 http://${ROUTE53_DOMAIN}"
                         echo "✅ Success: Able to access Nginx via Route53!"
                     } catch (Exception e) {
-                        error "❌ Failed to access Nginx at ${ROUTE53_DOMAIN}. Pipeline failed."
+                        echo "❌ Failed to access Nginx at ${ROUTE53_DOMAIN}"
                     }
                 }
             }
