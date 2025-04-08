@@ -22,15 +22,15 @@ pipeline {
         }
 
         stage('Read github repo, check for Filename and after validation, install nginx or httpd accordingly') {
-    steps {
-        script {
-            def foundFile = sh(script: "find . -type f -name '*${FILE_MATCH}*'", returnStdout: true).trim()
+            steps {
+                script {
+                    def foundFile = sh(script: "find . -type f -name '*${FILE_MATCH}*'", returnStdout: true).trim()
 
-            if (foundFile) {
-                echo "File(s) found: ${foundFile}"
-                // Install nginx server
-                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
-                    sh """
+                    if (foundFile) {
+                        echo "File(s) found: ${foundFile}"
+                        // Install nginx server
+                        sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+                            sh """
                         ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
                             # Check if httpd is installed
                             if rpm -q httpd >/dev/null 2>&1; then
@@ -46,11 +46,11 @@ pipeline {
                             sudo systemctl enable nginx
 EOF
                     """
-                }
+                        }
             } else {
-    echo "No file with '${FILE_MATCH}' found, installing httpd server..."
-    sshagent(credentials: [SSH_CREDENTIALS_ID]) {
-        sh """
+                        echo "No file with '${FILE_MATCH}' found, installing httpd server..."
+                        sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+                            sh """
             ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
                 # Check if nginx is installed
                 if rpm -q nginx; then
@@ -70,12 +70,11 @@ EOF
                 echo "<h1>Hello World from \$(hostname -f)</h1>" | sudo tee /var/www/html/index.html
 EOF
         """
-    }
-}
-
+                        }
+                    }
+                }
+            }
         }
-    }
-}
         stage('Create/Update Route53 Record') {
             steps {
                 script {
@@ -107,33 +106,32 @@ EOF
         }
 
         stage('Access nginx/httpd via Route53 Domain') {
-    steps {
-        script {
-            try {
-                echo "Waiting for DNS propagation..."
-                sleep time: 30, unit: 'SECONDS'
-                echo "Attempting to curl http://${ROUTE53_DOMAIN}"
+            steps {
+                script {
+                    try {
+                        echo 'Waiting for DNS propagation...'
+                        sleep time: 30, unit: 'SECONDS'
+                        echo "Attempting to curl http://${ROUTE53_DOMAIN}"
 
-                def response = sh(
+                        def response = sh(
                     script: "curl --fail --connect-timeout 10 --retry 3 --retry-delay 5 http://${ROUTE53_DOMAIN}",
                     returnStdout: true
                 ).trim()
 
-                echo "Response received: ${response}"
+                        echo "Response received: ${response}"
 
-                if (response.contains("Welcome to nginx!")) {
-                    echo "Nginx validation successful!"
-                } else if (response.contains("Hello World")) {
-                    echo "HTTPD (Apache) validation successful!"
+                        if (response.contains('Welcome to nginx!')) {
+                            echo 'Nginx validation successful!'
+                } else if (response.contains('Hello World')) {
+                            echo 'HTTPD (Apache) validation successful!'
                 } else {
-                    echo "Response received but content did not match expected patterns."
-                }
-
+                            echo 'Response received but content did not match expected patterns.'
+                        }
             } catch (Exception e) {
-                echo "Failed to access the server at ${ROUTE53_DOMAIN}"
+                        echo "Failed to access the server at ${ROUTE53_DOMAIN}"
+                    }
+                }
             }
         }
-    }
-}
     }
 }
