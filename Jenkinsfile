@@ -48,19 +48,31 @@ EOF
                     """
                 }
             } else {
-                echo "No file with '${FILE_MATCH}' found, installing httpd server..."
-                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
-                            sudo yum update -y
-                            sudo yum install -y httpd
-                            sudo systemctl start httpd
-                            sudo systemctl enable httpd
-                            echo "<h1>Hello World from \$(hostname -f)</h1>" | sudo tee /var/www/html/index.html
+    echo "No file with '${FILE_MATCH}' found, installing httpd server..."
+    sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+        sh """
+            ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
+                # Check if nginx is installed
+                if rpm -q nginx; then
+                    echo "Nginx is installed. Stopping nginx..."
+                    sudo systemctl stop nginx
+                    sudo systemctl disable nginx
+                else
+                    echo "Nginx is not installed. Proceeding..."
+                fi
+
+                # Install and start httpd
+                sudo yum install -y httpd
+                sudo systemctl start httpd
+                sudo systemctl enable httpd
+
+                # Add a simple index.html
+                echo "<h1>Hello World from \$(hostname -f)</h1>" | sudo tee /var/www/html/index.html
 EOF
-                    """
-                }
-            }
+        """
+    }
+}
+
         }
     }
 }
