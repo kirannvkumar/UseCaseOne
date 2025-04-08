@@ -21,42 +21,50 @@ pipeline {
             }
         }
 
-        stage('Read github repo and check for File') {
-            steps {
-                script {
-                    def foundFile = sh(script: "find . -type f -name '*${FILE_MATCH}*'", returnStdout: true).trim()
+        stage('Read github repo, check for Filename and after validation, install nginx or httpd accordingly') {
+    steps {
+        script {
+            def foundFile = sh(script: "find . -type f -name '*${FILE_MATCH}*'", returnStdout: true).trim()
 
-                    if (foundFile) {
-                        echo "File(s) found: ${foundFile}"
-                        // Install nginx server
-                        sshagent(credentials: [SSH_CREDENTIALS_ID]) {
-                            sh """
-                                ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
-                                    sudo yum update -y
-                                    sudo yum install nginx -y
-                                    sudo fuser -k 80/tcp || true
-                                    sudo systemctl start nginx
-                                    sudo systemctl enable nginx
+            if (foundFile) {
+                echo "File(s) found: ${foundFile}"
+                // Install nginx server
+                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
+                            # Check if httpd is installed
+                            if rpm -q httpd >/dev/null 2>&1; then
+                                echo "httpd is installed. Stopping it..."
+                                sudo systemctl stop httpd
+                                sudo systemctl disable httpd
+                            fi
+
+                            sudo yum update -y
+                            sudo yum install -y nginx
+                            sudo fuser -k 80/tcp || true
+                            sudo systemctl start nginx
+                            sudo systemctl enable nginx
 EOF
-                            """
-                        }
-                    } else {
-                        echo "No file with '${FILE_MATCH}' found, installing httpd server..."
-                        sshagent(credentials: [SSH_CREDENTIALS_ID]) {
-                            sh """
-                                ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
-                                    sudo yum update -y
-                                    sudo yum install -y httpd
-                                    sudo systemctl start httpd
-                                    sudo systemctl enable httpd
-                                    echo "<h1>Hello World from \$(hostname -f)</h1>" | sudo tee /var/www/html/index.html
+                    """
+                }
+            } else {
+                echo "No file with '${FILE_MATCH}' found, installing httpd server..."
+                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
+                            sudo yum update -y
+                            sudo yum install -y httpd
+                            sudo systemctl start httpd
+                            sudo systemctl enable httpd
+                            echo "<h1>Hello World from \$(hostname -f)</h1>" | sudo tee /var/www/html/index.html
 EOF
-                            """
-                        }
-                    }
+                    """
                 }
             }
         }
+    }
+}
+
 
         stage('Create/Update Route53 Record') {
             steps {
