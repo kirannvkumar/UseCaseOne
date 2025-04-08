@@ -9,8 +9,8 @@ pipeline {
         AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
         AWS_REGION = 'us-east-1'
-        ROUTE53_DOMAIN = 'nginx.example.com' // Replace with your Route53 domain
-        HOSTED_ZONE_ID = 'Z3P5QSUBK4POTI'    // Replace with your hosted zone ID
+        ROUTE53_DOMAIN = 'nvtesting.shop' // Replace with your Route53 domain
+        HOSTED_ZONE_ID = 'Z0262530JEOOHHQSAMX3'    // Replace with your hosted zone ID
     }
 
     stages {
