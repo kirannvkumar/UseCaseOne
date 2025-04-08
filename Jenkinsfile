@@ -29,9 +29,13 @@ pipeline {
                         // Install nginx server in EC2 instance
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                             sh """
-                                ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
+                                ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
                                     sudo yum update -y
                                     sudo yum install nginx -y
+
+                                    # Stop any process using port 80
+                                    sudo fuser -k 80/tcp || true
+
                                     sudo systemctl start nginx
                                     sudo systemctl enable nginx
                                     sudo systemctl status nginx
@@ -43,7 +47,7 @@ EOF
                         // Install httpd server in EC2 instance
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                             sh """
-                                ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << EOF
+                                ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
                                     sudo yum update -y
                                     sudo yum install -y httpd
                                     sudo systemctl start httpd
@@ -63,7 +67,6 @@ EOF
                 script {
                     try {
                         sh """
-                            //sudo apt-get install -y awscli
                             export AWS_REGION=${AWS_REGION}
                             aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
                             aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
