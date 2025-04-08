@@ -106,21 +106,34 @@ EOF
             }
         }
 
-        stage('Access Nginx via Route53 Domain') {
-            steps {
-                script {
-                    try {
-                        echo "Waiting for DNS propagation..."
-                        sleep time: 30, unit: 'SECONDS'
-                        echo "Attempting to curl http://${ROUTE53_DOMAIN}"
-                        
-                        sh "curl --fail --connect-timeout 10 --retry 3 --retry-delay 5 http://${ROUTE53_DOMAIN}"
-                        echo "✅ Success: Able to access Nginx via Route53!"
-                    } catch (Exception e) {
-                        echo "❌ Failed to access Nginx at ${ROUTE53_DOMAIN}"
-                    }
+        stage('Access nginx/httpd via Route53 Domain') {
+    steps {
+        script {
+            try {
+                echo "Waiting for DNS propagation..."
+                sleep time: 30, unit: 'SECONDS'
+                echo "Attempting to curl http://${ROUTE53_DOMAIN}"
+
+                def response = sh(
+                    script: "curl --fail --connect-timeout 10 --retry 3 --retry-delay 5 http://${ROUTE53_DOMAIN}",
+                    returnStdout: true
+                ).trim()
+
+                echo "Response received: ${response}"
+
+                if (response.contains("Welcome to nginx!")) {
+                    echo "Nginx validation successful!"
+                } else if (response.contains("Hello World")) {
+                    echo "HTTPD (Apache) validation successful!"
+                } else {
+                    echo "Response received but content did not match expected patterns."
                 }
+
+            } catch (Exception e) {
+                echo "Failed to access the server at ${ROUTE53_DOMAIN}"
             }
         }
+    }
+}
     }
 }
