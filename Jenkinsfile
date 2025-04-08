@@ -64,8 +64,6 @@ EOF
         }
     }
 }
-
-
         stage('Create/Update Route53 Record') {
             steps {
                 script {
