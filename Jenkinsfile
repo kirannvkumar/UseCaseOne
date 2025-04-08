@@ -9,6 +9,8 @@ pipeline {
         AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
         AWS_REGION = 'us-east-1'
+        ROUTE53_DOMAIN = 'nvtesting.shop'
+        HOSTED_ZONE_ID = 'Z0262530JEOOHHQSAMX3'    // Replace with your actual Hosted Zone ID
     }
 
     stages {
@@ -26,25 +28,20 @@ pipeline {
 
                     if (foundFile) {
                         echo "File(s) found: ${foundFile}"
-                        // Install nginx server in EC2 instance
+                        // Install nginx server
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                             sh """
                                 ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
                                     sudo yum update -y
                                     sudo yum install nginx -y
-
-                                    # Stop any process using port 80
                                     sudo fuser -k 80/tcp || true
-
                                     sudo systemctl start nginx
                                     sudo systemctl enable nginx
-                                    sudo systemctl status nginx
 EOF
                             """
                         }
                     } else {
                         echo "No file with '${FILE_MATCH}' found, installing httpd server..."
-                        // Install httpd server in EC2 instance
                         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                             sh """
                                 ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << 'EOF'
@@ -61,26 +58,42 @@ EOF
             }
         }
 
-        stage('Check Route 53 DNS') {
+        stage('Create/Update Route53 Record') {
             steps {
-                echo "Checking Route 53 hosted zones and DNS records..."
                 script {
-                    try {
-                        sh """
-                            export AWS_REGION=${AWS_REGION}
-                            aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
-                            aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
-                            aws configure set default.region "$AWS_REGION"
-
-                            ZONE_ID=\$(aws route53 list-hosted-zones --query "HostedZones[0].Id" --output text | cut -d'/' -f3)
-                            echo "Using Hosted Zone ID: \$ZONE_ID"
-
-                            aws route53 list-resource-record-sets --hosted-zone-id \$ZONE_ID
-                        """
-                    } catch (err) {
-                        error "Failed to fetch DNS records: ${err}"
+                    def changeBatch = """
+                    {
+                      "Comment": "Update record to point to EC2",
+                      "Changes": [{
+                        "Action": "UPSERT",
+                        "ResourceRecordSet": {
+                          "Name": "${ROUTE53_DOMAIN}",
+                          "Type": "A",
+                          "TTL": 300,
+                          "ResourceRecords": [{ "Value": "${EC2_HOST}" }]
+                        }
+                      }]
                     }
+                    """
+
+                    writeFile file: 'change-batch.json', text: changeBatch
+
+                    sh """
+                        aws route53 change-resource-record-sets \
+                          --hosted-zone-id ${HOSTED_ZONE_ID} \
+                          --change-batch file://change-batch.json \
+                          --region ${AWS_REGION}
+                    """
                 }
+            }
+        }
+
+        stage('Access Nginx via Route53 Domain') {
+            steps {
+                // Wait briefly to ensure DNS propagation
+                sh 'sleep 30'
+
+                sh "curl -I http://${ROUTE53_DOMAIN}"
             }
         }
     }
